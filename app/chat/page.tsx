@@ -330,6 +330,29 @@ export default function ChatPage() {
     }
   };
 
+  const copyMessageAsHtml = async (messageId: string, fallbackText: string) => {
+    try {
+      const element = document.getElementById(`msg-${messageId}`);
+      const html = element?.innerHTML ?? "";
+      const plain = element?.textContent ?? fallbackText;
+      // Prefer rich HTML when available
+      if (typeof (window as any).ClipboardItem !== "undefined" && html) {
+        const item = new (window as any).ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plain], { type: "text/plain" }),
+        });
+        await navigator.clipboard.write([item]);
+      } else {
+        await navigator.clipboard.writeText(plain);
+      }
+      setCopiedId(messageId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy message as HTML:", err);
+      await copyToClipboard(fallbackText, messageId);
+    }
+  };
+
   const sendMessage = async () => {
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
@@ -624,7 +647,7 @@ export default function ChatPage() {
                               size="sm"
                               variant="light"
                               className="mt-1"
-                              onPress={() => copyToClipboard(m.content, m.id)}
+                              onPress={() => copyMessageAsHtml(m.id, m.content)}
                             >
                               {copiedId === m.id ? (
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -646,7 +669,7 @@ export default function ChatPage() {
                               size="sm"
                               variant="light"
                               className="mt-1"
-                              onPress={() => copyToClipboard(m.content, m.id)}
+                              onPress={() => copyMessageAsHtml(m.id, m.content)}
                             >
                               {copiedId === m.id ? (
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -671,7 +694,9 @@ export default function ChatPage() {
                               : "bg-content1 text-foreground border-default-200",
                           )}
                         >
-                          {renderMessageContent(m.content, (m as any).annotations)}
+                          <div id={`msg-${m.id}`}>
+                            {renderMessageContent(m.content, (m as any).annotations)}
+                          </div>
                           <div className="mt-2 text-[10px] text-default-500">
                             {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </div>
