@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { Button } from "@heroui/button";
+import { Link } from "@heroui/link";
 import { Input } from "@heroui/input";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 import { getFirebaseDb } from "@/lib/firebase/client";
@@ -109,37 +110,51 @@ export default function LoginModal({ isOpen, onOpenChange }: LoginModalProps) {
       <ModalContent>
         {() => (
           <>
-            <ModalHeader className="flex flex-col gap-1">Sign in</ModalHeader>
+            <ModalHeader className="flex flex-col gap-1 items-center text-center">Sign In</ModalHeader>
             <ModalBody className="gap-3">
               {error && <div className="text-danger text-sm">{error}</div>}
-              <Button color="primary" variant="solid" onPress={handleGoogle} isLoading={isLoading}>
-                Continue with Google
-              </Button>
-              <div className="text-tiny text-default-500">or use email</div>
               <Input
+                id="login-email"
+                name="email"
                 label="Email"
                 value={email}
                 onValueChange={setEmail}
                 type="email"
-                classNames={{ inputWrapper: "bg-default-100" }}
+                autoComplete="email"
+                classNames={{ inputWrapper: "bg-default-100", label: "text-secondary font-medium" }}
               />
               <Input
+                id="login-password"
+                name="current-password"
                 label="Password"
                 value={password}
                 onValueChange={setPassword}
                 type="password"
                 onKeyDown={onPasswordKeyDown}
-                classNames={{ inputWrapper: "bg-default-100" }}
+                autoComplete="current-password"
+                classNames={{ inputWrapper: "bg-default-100", label: "text-secondary font-medium" }}
               />
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="light" onPress={() => onOpenChange(false)}>
-                Cancel
-              </Button>
               <Button color="secondary" onPress={handleEmail} isLoading={isLoading}>
                 Sign in
               </Button>
-            </ModalFooter>
+              <div className="my-1 flex items-center gap-2">
+                <div className="flex-1 border-t border-default-200" />
+                <span className="px-2 text-tiny text-default-500">Or continue with</span>
+                <div className="flex-1 border-t border-default-200" />
+              </div>
+              <Button
+                color="default"
+                variant="flat"
+                isDisabled
+                aria-disabled="true"
+                className="opacity-60 cursor-not-allowed"
+              >
+                Continue with Google
+              </Button>
+              <div className="text-center text-tiny text-secondary mt-1">
+                Don't have an account? <Link href="#" className="text-tiny font-normal">Sign up</Link>
+              </div>
+            </ModalBody>
           </>
         )}
       </ModalContent>

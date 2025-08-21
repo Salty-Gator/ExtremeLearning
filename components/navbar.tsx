@@ -26,13 +26,13 @@ import {
   SearchIcon,
   Logo,
 } from "@/components/icons";
-import LoginModal from "@/components/LoginModal";
 import { useState } from "react";
 
 export const Navbar = () => {
-  const [loginOpen, setLoginOpen] = useState(false);
   const searchInput = (
     <Input
+      id="navbar-search"
+      name="navbar-search"
       aria-label="Search"
       classNames={{
         inputWrapper: "bg-default-100",
@@ -45,6 +45,7 @@ export const Navbar = () => {
       }
       labelPlacement="outside"
       placeholder="Search..."
+      autoComplete="search"
       startContent={
         <SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
       }
@@ -96,11 +97,6 @@ export const Navbar = () => {
           <ThemeSwitch />
         </NavbarItem>
         <NavbarItem className="hidden lg:flex">{searchInput}</NavbarItem>
-        <NavbarItem className="hidden md:flex">
-          <Button className="text-sm font-medium" variant="solid" color="secondary" onPress={() => setLoginOpen(true)}>
-            Log in
-          </Button>
-        </NavbarItem>
       </NavbarContent>
 
       <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
@@ -131,12 +127,9 @@ export const Navbar = () => {
               </Link>
             </NavbarMenuItem>
           ))}
-          <Button color="secondary" variant="solid" onPress={() => setLoginOpen(true)}>
-            Log in
-          </Button>
+          {/* Intentionally no inline Log in button here; HomeLoginButton in layout handles homepage log in */}
         </div>
       </NavbarMenu>
-      <LoginModal isOpen={loginOpen} onOpenChange={setLoginOpen} />
     </HeroUINavbar>
   );
 };
