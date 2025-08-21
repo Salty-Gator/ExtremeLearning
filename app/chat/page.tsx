@@ -6,6 +6,7 @@ import { Card, CardBody, CardFooter, ScrollShadow, Avatar, Tooltip } from "@hero
 import Sidebar, { type SidebarChatSummary } from "@/components/Sidebar";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase/client";
 import { doc, setDoc, collection, serverTimestamp, getDoc, deleteDoc } from "firebase/firestore";
+import { getRandomDadJoke } from "../../lib/jokes";
 import { Link } from "@heroui/link";
 import { Input } from "@heroui/input";
 import { Kbd } from "@heroui/kbd";
@@ -27,7 +28,10 @@ export default function ChatPage() {
   const [sidebarMin, setSidebarMin] = useState(false);
   const [savedChats, setSavedChats] = useState<SidebarChatSummary[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [waitingTexts, setWaitingTexts] = useState<string[]>([]);
+  const [waitingIndex, setWaitingIndex] = useState<number>(0);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const waitingTextsRef = useRef<string[]>([]);
   const auth = getFirebaseAuth();
   const db = getFirebaseDb();
 
@@ -319,6 +323,36 @@ export default function ChatPage() {
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  // Keep a live ref to waiting texts for safe interval modulo
+  useEffect(() => {
+    waitingTextsRef.current = waitingTexts;
+  }, [waitingTexts]);
+
+  // When waiting for a response, show rotating helper text and a dad joke
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
+    if (isLoading) {
+      setWaitingIndex(0);
+      const joke = getRandomDadJoke();
+      setWaitingTexts([
+        "We are working on a tailored response to your prompt.",
+        "While you wait enjoy a dad joke on us.",
+        joke,
+      ]);
+
+      interval = setInterval(() => {
+        setWaitingIndex((prev) => {
+          const len = Math.max(1, waitingTextsRef.current.length || 1);
+          return (prev + 1) % len;
+        });
+      }, 11000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+      setWaitingIndex(0);
+    };
+  }, [isLoading]);
 
   const copyToClipboard = async (text: string, messageId: string) => {
     try {
@@ -709,6 +743,16 @@ export default function ChatPage() {
             )}
           </ScrollShadow>
         </CardBody>
+        {isLoading && (
+          <div className="absolute left-3 right-3 bottom-20 pointer-events-none">
+            <div
+              className="inline-block w-full rounded-medium border border-default-200 bg-content1/80 backdrop-blur-sm px-3 py-2 text-sm text-default-700 shadow-sm text-center"
+              style={{ animation: "fadeInOutSlow 11s ease-in-out infinite" }}
+            >
+              {waitingTexts[waitingIndex] || "Working on it..."}
+            </div>
+          </div>
+        )}
         <CardFooter
           className="absolute bottom-1 z-10 ml-1 w-[calc(100%_-_8px)] justify-between gap-2 overflow-hidden rounded-large border-1 border-white/20 px-3 sm:px-4 py-2 sm:py-3"
         >
@@ -723,6 +767,17 @@ export default function ChatPage() {
             Send
           </Button>
         </CardFooter>
+        {/* Scoped styles for slow fade animation */}
+        <style jsx>{`
+          @keyframes fadeInOutSlow {
+            0% { opacity: 0; }
+            10% { opacity: 0.35; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            90% { opacity: 0.35; }
+            100% { opacity: 0; }
+          }
+        `}</style>
       </Card>
       </div>
     </div>
