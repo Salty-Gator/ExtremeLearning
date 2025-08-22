@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createAssistantResponse, createChatCompletion, refineAssistantOutputWithChatCompletion } from "@/lib/server/openai";
-import { rewriteMessagesWithRules } from "@/lib/server/rules";
 
 export async function POST(request: Request) {
   try {
@@ -80,26 +79,51 @@ export async function POST(request: Request) {
     const userId = (request.headers.get("x-user-id") || "").trim() || undefined;
 
     if (assistantId) {
-      const { messages: steeredMessages } = rewriteMessagesWithRules(messages);
-      const payload = await createAssistantResponse(steeredMessages, assistantId);
+      // Send original messages; assistant's System Instructions already contain rules
+      const payload = await createAssistantResponse(messages, assistantId);
       const cleanedAssistant = payload.content.replace(/\u3010\d+:\d+†source\u3011/g, "");
 
       // Second pass refinement: feed user's latest request and assistant output to Chat Completions
-      const latestUserContent = [...steeredMessages]
+      const latestUserContent = [...messages]
         .reverse()
-        .find((m) => m.role === "user")?.content || "";
+        .find((m: { role: string; content: string }) => m.role === "user")?.content || "";
       const refined = await refineAssistantOutputWithChatCompletion(
         latestUserContent,
         cleanedAssistant,
       );
       const cleanedRefined = refined.content.replace(/\u3010\d+:\d+†source\u3011/g, "");
-      // Return refined content plus usage/model from the refinement Chat Completion so client can log usage
-      return NextResponse.json({ content: cleanedRefined, annotations: payload.annotations, usage: refined.usage, model: refined.model });
+      // Build a human-readable full prompt record for persistence (Assistants path)
+      const systemInstructions = messages
+        .filter((m: { role: string }) => m.role === "system")
+        .map((m: { content: string }) => m.content)
+        .join("\n\n");
+      const convoParts = messages
+        .filter((m: { role: string }) => m.role === "user" || m.role === "assistant")
+        .map((m: { role: string; content: string }) => `${m.role}: ${m.content}`);
+      const fullPrompt = [
+        systemInstructions ? `system: ${systemInstructions}` : undefined,
+        ...convoParts,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+
+      // Return refined content plus usage/model from the refinement Chat Completion so client can log usage,
+      // along with the full prompt and source so the client can persist it with the user message
+      return NextResponse.json({
+        content: cleanedRefined,
+        annotations: payload.annotations,
+        usage: refined.usage,
+        model: refined.model,
+        fullPrompt,
+        openaiSource: "assistants",
+      });
     } else {
       const result = await createChatCompletion(messages);
       const cleaned = result.content.replace(/\u3010\d+:\d+†source\u3011/g, "");
-      // Return usage and model so the client can log aggregates to Firestore
-      return NextResponse.json({ content: cleaned, usage: result.usage, model: result.model });
+      // Build a human-readable full prompt record for persistence (Chat Completions path)
+      const fullPrompt = messages.map((m: any) => `${m.role}: ${m.content}`).join("\n\n");
+      // Return usage and model so the client can log aggregates to Firestore, plus full prompt and source
+      return NextResponse.json({ content: cleaned, usage: result.usage, model: result.model, fullPrompt, openaiSource: "chat_completions" });
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown server error";

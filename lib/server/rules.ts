@@ -100,38 +100,10 @@ export function buildRulesRider(rules?: Rules): string {
   ].join("\n");
 }
 
-export function rewriteMessagesWithRules(
-  inputMessages: OpenAIChatMessage[],
-): { messages: OpenAIChatMessage[]; normalized?: string; expanded?: string[] } {
-  const rules = getRules();
-  const rider = buildRulesRider(rules);
-
-  // Clone messages
-  const messages: OpenAIChatMessage[] = inputMessages.map((m) => ({ ...m }));
-
-  // Find the last user turn
-  const lastUserIdx = [...messages].map((m, i) => ({ role: m.role, i })).reverse().find((x) => x.role === "user")?.i;
-  if (lastUserIdx === undefined) {
-    // Still inject rider as system for future turns
-    return { messages: [{ role: "system", content: rider }, ...messages] };
-  }
-
-  const original = messages[lastUserIdx].content || "";
-  const { normalized, expanded } = normalizeAndExpandQuery(original, rules);
-  const augmented = [
-    `User question: ${original}`,
-    `Normalized: ${normalized}`,
-    expanded && expanded.length > 1 ? `Expanded hints: ${expanded.join(" | ")}` : undefined,
-    "If helpful, use the expansions as search hints.",
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  const out = messages.slice();
-  out[lastUserIdx] = { role: "user", content: augmented };
-  out.unshift({ role: "system", content: rider });
-
-  return { messages: out, normalized, expanded };
+// Deprecated: rules are now configured in OpenAI Assistant System Instructions.
+// Keeping placeholder export to avoid breaking imports if any remain.
+export function rewriteMessagesWithRules(inputMessages: OpenAIChatMessage[]): { messages: OpenAIChatMessage[] } {
+  return { messages: inputMessages };
 }
 
 

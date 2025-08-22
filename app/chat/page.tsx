@@ -45,6 +45,8 @@ type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   createdAt: number;
+  fullPrompt?: string;
+  openaiSource?: "assistants" | "chat_completions";
 };
 
 export default function ChatPage() {
@@ -490,6 +492,24 @@ export default function ChatPage() {
         throw new Error(text || "Request failed");
       }
       const data = await res.json();
+      // If server returned fullPrompt and source, retroactively store them on the last user message
+      if (data?.fullPrompt || data?.openaiSource) {
+        setMessages((prev) => {
+          const next = [...prev];
+          // Find the last user message we just sent
+          for (let i = next.length - 1; i >= 0; i -= 1) {
+            if (next[i].role === "user") {
+              next[i] = {
+                ...next[i],
+                fullPrompt: data.fullPrompt || next[i].fullPrompt,
+                openaiSource: (data.openaiSource as any) || next[i].openaiSource,
+              } as any;
+              break;
+            }
+          }
+          return next;
+        });
+      }
       const assistantMsg: ChatMessage = {
         id: generateId(),
         role: "assistant",
