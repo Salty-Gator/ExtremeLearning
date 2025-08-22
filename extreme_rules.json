@@ -1,0 +1,351 @@
+{
+  "version": "1.0.0",
+  "updated": "2025-08-21",
+  "owner": "Extreme RAG",
+  "description": "Domain knowledge layer for Extreme Networks content normalization, query expansion, and retrieval boosting. Use during ingestion (tagging/extraction) and retrieval (filters/boosts).",
+
+  "entities": {
+    "extreme_platform_one": {
+      "canonical": "Extreme Platform ONE",
+      "synonyms": ["EP1", "Extreme Platform 1", "E.P. One", "Platform One"],
+      "boost": 1.5
+    },
+    "extremecloud_iq": {
+      "canonical": "ExtremeCloud IQ",
+      "synonyms": ["XIQ", "Extreme Cloud IQ", "ExtremeCloudIQ"],
+      "boost": 1.4
+    },
+    "extremecloud_iq_site_engine": {
+      "canonical": "ExtremeCloud IQ Site Engine",
+      "synonyms": [
+        "XIQ-SE",
+        "Site Engine",
+        "Extreme Site Engine",
+        "ESE",
+        "NetSight",
+        "Extreme Management Center",
+        "XMC"
+      ],
+      "boost": 1.6
+    },
+    "extreme_switch_engine": {
+      "canonical": "Switch Engine (EXOS)",
+      "synonyms": ["EXOS", "ExtremeXOS", "Switch Engine", "Exos"],
+      "boost": 1.5
+    },
+    "extreme_fabric_engine": {
+      "canonical": "Fabric Engine (VOSS)",
+      "synonyms": ["VOSS", "VOSS/ERS", "Fabric Engine", "Extreme VOSS"],
+      "boost": 1.5
+    },
+    "fabric_connect": {
+      "canonical": "Fabric Connect",
+      "synonyms": ["SPB", "IEEE 802.1aq", "Shortest Path Bridging", "FC"],
+      "boost": 1.7
+    },
+    "extreme_control": {
+      "canonical": "ExtremeControl (NAC)",
+      "synonyms": [
+        "ExtremeControl",
+        "Extreme Control",
+        "NAC",
+        "Network Access Control",
+        "NetSight NAC",
+        "Extreme NAC"
+      ],
+      "boost": 1.5
+    },
+    "extreme_analytics": {
+      "canonical": "ExtremeAnalytics",
+      "synonyms": [
+        "Extreme Analytics",
+        "Purview",
+        "Application Analytics",
+        "NetSight Analytics",
+        "XMC Analytics"
+      ],
+      "boost": 1.3
+    },
+    "switch_5320": {
+      "canonical": "Extreme 5320 Series",
+      "synonyms": ["X435 replacement?", "5320-24P", "5320-24T", "5320-48P", "5320"],
+      "boost": 1.2
+    },
+    "switch_5420": {
+      "canonical": "Extreme 5420 Series",
+      "synonyms": ["5420F", "5420-24T", "5420-48P", "5420M", "5420F-48P-4XE", "5420"],
+      "boost": 1.3
+    },
+    "switch_5520": {
+      "canonical": "Extreme 5520 Series",
+      "synonyms": ["5520-24X", "5520-48X", "5520"],
+      "boost": 1.4
+    },
+    "switch_5720": {
+      "canonical": "Extreme 5720 Series",
+      "synonyms": ["5720-48XS", "5720-24MXW", "5720"],
+      "boost": 1.3
+    },
+    "switch_7520": {
+      "canonical": "Extreme 7520 Series",
+      "synonyms": ["7520-48Y-8C", "7520"],
+      "boost": 1.2
+    },
+    "ap_3xx": {
+      "canonical": "AP3xx Series",
+      "synonyms": ["AP305", "AP305C", "AP310", "AP302", "AP3xx"],
+      "boost": 1.1
+    },
+    "ap_4xx": {
+      "canonical": "AP4xx Series",
+      "synonyms": ["AP410", "AP460", "AP4000", "AP4xx"],
+      "boost": 1.1
+    },
+    "erate_internal_connections": {
+      "canonical": "Internal Connections",
+      "synonyms": ["IC", "E-rate IC", "Internal Connection"],
+      "boost": 1.4
+    },
+    "erate_bmic": {
+      "canonical": "Basic Maintenance of Internal Connections",
+      "synonyms": ["BMIC"],
+      "boost": 1.4
+    },
+    "erate_mibs": {
+      "canonical": "Managed Internal Broadband Services",
+      "synonyms": ["MIBS", "Managed Services"],
+      "boost": 1.3
+    },
+    "license_coterm": {
+      "canonical": "co-termination",
+      "synonyms": ["co-term", "coterm", "co term", "co termination"],
+      "boost": 1.2
+    },
+    "gtac": {
+      "canonical": "GTAC",
+      "synonyms": ["Support", "Extreme Support", "Global Technical Assistance Center"],
+      "boost": 1.1
+    },
+    "multicast": {
+      "canonical": "Multicast",
+      "synonyms": ["PIM", "IGMP", "IGMP Snooping"],
+      "boost": 1.2
+    },
+    "qos": {
+      "canonical": "Quality of Service",
+      "synonyms": ["QoS", "DiffServ", "DSCP"],
+      "boost": 1.1
+    },
+    "wifi6e": {
+      "canonical": "Wi-Fi 6E",
+      "synonyms": ["WiFi 6E", "802.11ax 6GHz", "11ax 6 GHz", "wifi6e"],
+      "boost": 1.1
+    }
+  },
+
+  "normalization": {
+    "products": {
+      "EXOS": "Switch Engine (EXOS)",
+      "ExtremeXOS": "Switch Engine (EXOS)",
+      "VOSS": "Fabric Engine (VOSS)",
+      "XIQ-SE": "ExtremeCloud IQ Site Engine",
+      "SiteEngine": "ExtremeCloud IQ Site Engine",
+      "Extreme Cloud IQ": "ExtremeCloud IQ",
+      "EP1": "Extreme Platform ONE",
+      "ESE": "ExtremeCloud IQ Site Engine",
+      "XMC": "ExtremeCloud IQ Site Engine",
+      "NetSight": "ExtremeCloud IQ Site Engine",
+      "NAC": "ExtremeControl (NAC)",
+      "NetSight NAC": "ExtremeControl (NAC)",
+      "Extreme NAC": "ExtremeControl (NAC)",
+      "Purview": "ExtremeAnalytics",
+      "XMC Analytics": "ExtremeAnalytics",
+      "NetSight Analytics": "ExtremeAnalytics"
+    },
+    "wifi": {
+      "wifi6e": "Wi-Fi 6E",
+      "wifi6": "Wi-Fi 6",
+      "802.11ax (6ghz)": "Wi-Fi 6E"
+    },
+    "licensing": {
+      "co-term": "co-termination",
+      "coterm": "co-termination"
+    },
+    "units": {
+      "w": "W",
+      "kw": "kW",
+      "gbps": "Gbps",
+      "mbps": "Mbps",
+      "poe+": "PoE+",
+      "poe++": "PoE++"
+    },
+    "doc_types": {
+      "RN": "Release Notes",
+      "QRG": "Quick Reference Guide",
+      "UG": "User Guide",
+      "HW Guide": "Hardware Installation Guide"
+    }
+  },
+
+  "patterns": {
+    "mac_address": {
+      "regex": "\\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\\b",
+      "description": "MAC address"
+    },
+    "vlan_id": {
+      "regex": "\\bVLAN\\s*(\\d{1,4})\\b",
+      "description": "VLAN ID (0-4094)"
+    },
+    "ipv4": {
+      "regex": "\\b(?:(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\b",
+      "description": "IPv4 address"
+    },
+    "ipv6": {
+      "regex": "\\b([A-Fa-f0-9]{1,4}:){7}[A-Fa-f0-9]{1,4}\\b",
+      "description": "IPv6 (simple match)"
+    },
+    "gtac_case": {
+      "regex": "\\b0\\d{7}\\b",
+      "description": "GTAC case number (8 digits starting with 0)"
+    },
+    "serial_number": {
+      "regex": "\\b([A-Z0-9]{8,14})\\b",
+      "description": "Generic device serial"
+    },
+    "sku_switch": {
+      "regex": "\\b(53|54|55|57|75)20-[0-9A-Z]+\\b",
+      "description": "Switch SKU pattern"
+    },
+    "ap_sku": {
+      "regex": "\\bAP[34]\\d{2}[A-Z]*\\b",
+      "description": "AP3xx/AP4xx family"
+    },
+    "firmware_version_exos": {
+      "regex": "\\b(3[01]|32)\\.\\d+(?:\\.\\d+)?\\b",
+      "description": "EXOS firmware version"
+    },
+    "firmware_version_voss": {
+      "regex": "\\b[0-9]{2}\\.\\d+(?:\\.\\d+)?\\b",
+      "description": "VOSS firmware version"
+    },
+    "contract_po": {
+      "regex": "\\b(PO|PR|CNTR)[-_ ]?[0-9A-Z]{6,}\\b",
+      "description": "Purchase/contract identifiers"
+    }
+  },
+
+  "negatives": [
+    "fabric (textile|cotton|weave|cloth|garment)",
+    "\\bEP1\\b (movie|episode|season)",
+    "\\bVOSS\\b (water|bottle)",
+    "spb.*(weave|loom)"
+  ],
+
+  "retrieval": {
+    "metadata_boosts": {
+      "product": {
+        "Fabric Connect": 1.2,
+        "Switch Engine (EXOS)": 1.1,
+        "Fabric Engine (VOSS)": 1.1,
+        "ExtremeCloud IQ Site Engine": 1.1
+      },
+      "doc_type": {
+        "Release Notes": 1.1,
+        "Configuration Guide": 1.2,
+        "Best Practice": 1.3
+      },
+      "pub_recency_months": {
+        "<=12": 1.2,
+        "13-36": 1.05,
+        ">36": 0.95
+      }
+    },
+    "default_filters": {
+      "when_query_contains": [
+        {
+          "contains": ["firmware", "upgrade", "release notes", "known issues"],
+          "set_filter": {
+            "doc_type_in": ["Release Notes", "Configuration Guide"]
+          }
+        },
+        {
+          "contains": ["multicast", "igmp", "pim", "spb"],
+          "set_filter": {
+            "product_in": ["Fabric Connect", "Fabric Engine (VOSS)", "Switch Engine (EXOS)"]
+          }
+        }
+      ]
+    },
+    "top_k": {
+      "semantic": 60,
+      "keyword": 30,
+      "rerank_select": 15
+    }
+  },
+
+  "tagging": {
+    "product_infer": [
+      { "pattern_any": ["\\bEXOS\\b", "Switch Engine"], "value": "Switch Engine (EXOS)" },
+      { "pattern_any": ["\\bVOSS\\b", "Fabric Engine"], "value": "Fabric Engine (VOSS)" },
+      { "pattern_any": ["ExtremeCloud IQ Site Engine", "\\bXIQ[- ]?SE\\b", "\\bSite Engine\\b"], "value": "ExtremeCloud IQ Site Engine" },
+      { "pattern_any": ["Fabric Connect", "\\bSPB\\b", "802\\.1aq"], "value": "Fabric Connect" },
+      { "pattern_any": ["Extreme Platform ONE", "\\bEP1\\b"], "value": "Extreme Platform ONE" }
+    ],
+    "doc_type_infer": [
+      { "pattern_any": ["Release Notes", "\\bKnown Issues\\b", "\\bResolved Issues\\b"], "value": "Release Notes" },
+      { "pattern_any": ["User Guide", "Configuration Guide", "Install Guide", "CLI Reference"], "value": "Configuration Guide" },
+      { "pattern_any": ["Quick Reference", "\\bQRG\\b"], "value": "Quick Reference Guide" },
+      { "pattern_any": ["Best Practice", "Design Guide", "Deployment Guide"], "value": "Best Practice" }
+    ],
+    "extract_fields": {
+      "firmware_exos": { "use_regex": "firmware_version_exos" },
+      "firmware_voss": { "use_regex": "firmware_version_voss" },
+      "vlan_ids": { "use_regex": "vlan_id" },
+      "macs": { "use_regex": "mac_address" },
+      "ips": { "use_regex": "ipv4" },
+      "serials": { "use_regex": "serial_number" },
+      "skus_switch": { "use_regex": "sku_switch" },
+      "skus_ap": { "use_regex": "ap_sku" }
+    }
+  },
+
+  "glossary": {
+    "Fabric Connect": "Extreme’s SPB-based fabric technology that simplifies L2/L3 services and multicast.",
+    "Switch Engine (EXOS)": "Extreme’s NOS for EXOS-based switches (e.g., 5320/5420/5520/5720).",
+    "Fabric Engine (VOSS)": "Extreme’s NOS for VOSS-based systems, often used in Fabric Connect cores/edges.",
+    "EP1": "Extreme Platform ONE—AI, automation, and unified workflows across Extreme solutions.",
+    "E-rate IC": "Category 2 ‘Internal Connections’ (eligible hardware/software required to make it work).",
+    "BMIC": "Basic Maintenance of Internal Connections.",
+    "MIBS": "Managed Internal Broadband Services.",
+    "ExtremeCloud IQ Site Engine": "Legacy XMC/NetSight rebranded as Site Engine. Provides on-prem management, inventory, configuration, compliance, topology, and integration with XIQ.",
+    "ExtremeControl (NAC)": "Extreme’s NAC solution. Provides authentication, policy enforcement, device profiling, and guest/BYOD onboarding. Formerly NetSight NAC.",
+    "ExtremeAnalytics": "Extreme’s application visibility and analytics platform. Originally Purview, provides layer 7 application identification, usage insights, and integration with NAC for policy."
+  },
+
+  "redaction": [
+    { "regex": "\\b[0-9]{10,16}\\b", "replace": "[REDACTED_NUMBER]" },
+    { "regex": "\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b", "flags": "i", "replace": "[REDACTED_EMAIL]" },
+    { "use_pattern": "gtac_case", "replace": "[GTAC_CASE]" },
+    { "use_pattern": "serial_number", "replace": "[SERIAL]" },
+    { "use_pattern": "contract_po", "replace": "[CONTRACT_ID]" }
+  ],
+
+  "query_expansion": {
+    "expand_if_absent": [
+      { "entity": "fabric_connect" },
+      { "entity": "extremecloud_iq_site_engine" },
+      { "entity": "extreme_switch_engine" },
+      { "entity": "extreme_fabric_engine" },
+      { "entity": "extreme_platform_one" }
+    ],
+    "negative_guards": "*use negatives above*",
+    "max_added_terms": 8
+  },
+
+  "eval": {
+    "must_cite": true,
+    "prefer_recent_months": 36,
+    "firmware_conflict_note": "If multiple firmware versions differ, state version-specific results.",
+    "hard_facts_require_table": true
+  }
+}

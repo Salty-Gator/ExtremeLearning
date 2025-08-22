@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAssistantResponse, createChatCompletion, refineAssistantOutputWithChatCompletion } from "@/lib/server/openai";
+import { rewriteMessagesWithRules } from "@/lib/server/rules";
 
 export async function POST(request: Request) {
   try {
@@ -8,12 +9,12 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const messages = Array.isArray(body?.messages) ? body.messages : [];
 
-    const assistantId = process.env.REACT_APP_OPENAI_ASSISTANT_ID || process.env.OPENAI_ASSISTANT_ID;
+    const assistantId = process.env.OPENAI_ASSISTANT_ID;
 
     // Stream only for Chat Completions (assistants streaming is more complex)
     if (streamRequested && !assistantId) {
-      const apiKey = process.env.REACT_APP_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const model = process.env.REACT_APP_OPENAI_MODEL || process.env.OPENAI_MODEL || "gpt-5";
+      const apiKey = process.env.OPENAI_API_KEY;
+      const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
       if (!apiKey) {
         return NextResponse.json({ error: "Missing OpenAI API key" }, { status: 500 });
       }
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({ model, messages, temperature: 0.7, stream: true }),
+        body: JSON.stringify({ model, messages, stream: true }),
       });
 
       if (!upstream.ok || !upstream.body) {
@@ -76,24 +77,29 @@ export async function POST(request: Request) {
     }
 
     // Non-streaming path (Assistants or standard chat)
+    const userId = (request.headers.get("x-user-id") || "").trim() || undefined;
+
     if (assistantId) {
-      const payload = await createAssistantResponse(messages, assistantId);
+      const { messages: steeredMessages } = rewriteMessagesWithRules(messages);
+      const payload = await createAssistantResponse(steeredMessages, assistantId);
       const cleanedAssistant = payload.content.replace(/\u3010\d+:\d+†source\u3011/g, "");
 
       // Second pass refinement: feed user's latest request and assistant output to Chat Completions
-      const latestUserContent = [...messages]
+      const latestUserContent = [...steeredMessages]
         .reverse()
         .find((m) => m.role === "user")?.content || "";
       const refined = await refineAssistantOutputWithChatCompletion(
         latestUserContent,
         cleanedAssistant,
       );
-      const cleanedRefined = refined.replace(/\u3010\d+:\d+†source\u3011/g, "");
-      return NextResponse.json({ content: cleanedRefined, annotations: payload.annotations });
+      const cleanedRefined = refined.content.replace(/\u3010\d+:\d+†source\u3011/g, "");
+      // Return refined content plus usage/model from the refinement Chat Completion so client can log usage
+      return NextResponse.json({ content: cleanedRefined, annotations: payload.annotations, usage: refined.usage, model: refined.model });
     } else {
-      const content = await createChatCompletion(messages);
-      const cleaned = content.replace(/\u3010\d+:\d+†source\u3011/g, "");
-      return NextResponse.json({ content: cleaned });
+      const result = await createChatCompletion(messages);
+      const cleaned = result.content.replace(/\u3010\d+:\d+†source\u3011/g, "");
+      // Return usage and model so the client can log aggregates to Firestore
+      return NextResponse.json({ content: cleaned, usage: result.usage, model: result.model });
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown server error";

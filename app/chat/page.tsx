@@ -5,13 +5,40 @@ import { Button } from "@heroui/button";
 import { Card, CardBody, CardFooter, ScrollShadow, Avatar, Tooltip } from "@heroui/react";
 import Sidebar, { type SidebarChatSummary } from "@/components/Sidebar";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase/client";
-import { doc, setDoc, collection, serverTimestamp, getDoc, deleteDoc } from "firebase/firestore";
+import { doc, setDoc, collection, serverTimestamp, getDoc, deleteDoc, increment } from "firebase/firestore";
 import { getRandomDadJoke } from "../../lib/jokes";
 import { Link } from "@heroui/link";
 import { Input } from "@heroui/input";
 import { Kbd } from "@heroui/kbd";
 import { Listbox, ListboxItem } from "@heroui/listbox";
 import clsx from "clsx";
+import AuthGate from "@/lib/authz/AuthGate";
+import { useAuthz } from "@/lib/authz/context";
+
+// Safe UUID v4 generator with fallbacks for environments lacking crypto.randomUUID
+function generateId(): string {
+  try {
+    if (typeof crypto !== "undefined" && typeof (crypto as any).randomUUID === "function") {
+      return (crypto as any).randomUUID();
+    }
+  } catch {}
+  const getRandomValues = (typeof crypto !== "undefined" && (crypto as any).getRandomValues)
+    ? (crypto as any).getRandomValues.bind(crypto)
+    : null;
+  const randomNibble = () => {
+    if (getRandomValues) {
+      const arr = new Uint8Array(1);
+      getRandomValues(arr);
+      return arr[0] & 0x0f;
+    }
+    return Math.floor(Math.random() * 16);
+  };
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = randomNibble();
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 type ChatMessage = {
   id: string;
@@ -34,6 +61,14 @@ export default function ChatPage() {
   const waitingTextsRef = useRef<string[]>([]);
   const auth = getFirebaseAuth();
   const db = getFirebaseDb();
+  const { isAdmin } = useAuthz();
+
+  // Admin editor state
+  const [editorMode, setEditorMode] = useState<"rich" | "md">("rich");
+  const richRef = useRef<HTMLDivElement | null>(null);
+  const [markdownText, setMarkdownText] = useState<string>("");
+  const [noteFilename, setNoteFilename] = useState<string>("");
+  const [saveMessage, setSaveMessage] = useState<string>("");
 
   const renderMessageContent = (content: string, annotations?: Array<any>) => {
     // Extract footnotes of the form: [1]: https://example.com
@@ -205,8 +240,8 @@ export default function ChatPage() {
           continue;
         }
 
-        // heading
-        const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
+        // heading (allow optional leading spaces)
+        const heading = trimmed.match(/^\s*(#{1,6})\s+(.+)$/);
         if (heading) {
           pushHeading(heading[1].length, heading[2]);
           i += 1;
@@ -392,7 +427,7 @@ export default function ChatPage() {
     if (!trimmed || isLoading) return;
 
     const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       role: "user",
       content: trimmed,
       createdAt: Date.now(),
@@ -401,7 +436,7 @@ export default function ChatPage() {
     setInput("");
     // Ensure a new chat record exists if one hasn't been started yet
     if (!currentChatId) {
-      const newId = crypto.randomUUID();
+      const newId = generateId();
       const createdAt = Date.now();
       setCurrentChatId(newId);
       const provisionalTitle = trimmed.slice(0, 64) || "Untitled chat";
@@ -437,9 +472,10 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
+      const user = auth.currentUser;
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(user?.uid ? { "x-user-id": user.uid } : {}) },
         body: JSON.stringify({
           messages: [
             { role: "system", content: "You are a helpful assistant." },
@@ -455,16 +491,61 @@ export default function ChatPage() {
       }
       const data = await res.json();
       const assistantMsg: ChatMessage = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         role: "assistant",
         content: data.content || "(No content)",
         createdAt: Date.now(),
       };
       setMessages((prev) => [...prev, assistantMsg]);
+
+      // Log OpenAI token usage to Firestore (cumulative and daily) if available
+      try {
+        const usage = data?.usage || {};
+        const prompt = Number(usage?.prompt_tokens || 0);
+        const completion = Number(usage?.completion_tokens || 0);
+        const total = Number(usage?.total_tokens || prompt + completion);
+        const model = String(data?.model || "");
+        const u = auth.currentUser;
+        if (u && (prompt || completion || total)) {
+          // Cumulative totals
+          const cumRef = doc(collection(db, "usage"), u.uid);
+          await setDoc(
+            cumRef,
+            {
+              promptTokens: increment(prompt),
+              completionTokens: increment(completion),
+              totalTokens: increment(total),
+              lastModel: model || undefined,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true },
+          );
+
+          // Daily aggregates
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const dateKey = today.toISOString().slice(0, 10);
+          const dailyRef = doc(collection(db, "usageDaily", dateKey, "users"), u.uid);
+          await setDoc(
+            dailyRef,
+            {
+              promptTokens: increment(prompt),
+              completionTokens: increment(completion),
+              totalTokens: increment(total),
+              model: model || undefined,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true },
+          );
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn("Failed to log usage to Firestore:", e);
+      }
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "assistant", content: "Sorry, I couldn't process that request.", createdAt: Date.now() },
+        { id: generateId(), role: "assistant", content: "Sorry, I couldn't process that request.", createdAt: Date.now() },
       ]);
     } finally {
       setIsLoading(false);
@@ -570,7 +651,7 @@ export default function ChatPage() {
         }
       }
 
-      const chatId = currentChatId || crypto.randomUUID();
+      const chatId = currentChatId || generateId();
       const existingEntry = savedChats.find((c) => c.id === chatId);
       const entry: SidebarChatSummary = {
         id: chatId,
@@ -607,7 +688,7 @@ export default function ChatPage() {
   }, [messages]);
 
   const handleNewChat = async () => {
-    const newId = crypto.randomUUID();
+    const newId = generateId();
     const createdAt = Date.now();
     setCurrentChatId(newId);
     setMessages([]);
@@ -640,6 +721,7 @@ export default function ChatPage() {
   };
 
   return (
+    <AuthGate minRole="viewer" fallback={<div className="p-4 text-default-600">You do not have access to this module.</div>} redirectTo="/">
     <div className="mx-auto w-full max-w-full sm:max-w-[1344px] lg:max-w-[1536px] px-3 sm:px-4 md:px-0 h-[100dvh] overflow-hidden flex flex-row pt-3 sm:pt-4 md:pt-6">
       <Sidebar
         minimized={sidebarMin}
@@ -650,12 +732,11 @@ export default function ChatPage() {
         onDeleteChat={handleDeleteChat}
         onNewChat={handleNewChat}
       />
-      <div className="flex-1 flex flex-col min-w-0 ml-[296px] sm:ml-[296px]">
+      <div className="flex-1 flex flex-col min-w-0 ml-[280px] sm:ml-[280px] relative">
       <div className="flex items-center justify-between mb-4 md:mb-6">
         <h1 className="text-2xl font-semibold">Chat</h1>      
       </div>
-
-      <Card isFooterBlurred className="relative flex-1 min-h-0 max-h-full overflow-hidden flex flex-col bg-transparent shadow-none">
+      <Card isFooterBlurred className="relative flex-1 min-h-0 max-h-full overflow-hidden flex flex-col bg-transparent shadow-none border-1 border-default-300 self-start w-3/4">
         <CardBody className="p-0 h-full bg-transparent">
           <ScrollShadow hideScrollBar className="h-full p-3 sm:p-4 space-y-3 sm:space-y-4 pb-24" ref={listRef as any}>
             {messages.length === 0 ? (
@@ -663,10 +744,18 @@ export default function ChatPage() {
                 Start a conversation below. Press <Kbd keys={["command"]}>Enter</Kbd> or <Kbd keys={["ctrl"]}>Enter</Kbd> to send.
               </div>
             ) : (
-              <Listbox aria-label="Chat messages" className="gap-2 bg-transparent" selectionMode="none">
+              <Listbox
+                aria-label="Chat messages"
+                className="gap-2 bg-transparent"
+                selectionMode="none"
+                itemClasses={{
+                  base:
+                    "transition-none data-[hover=true]:bg-transparent data-[pressed=true]:bg-transparent data-[focus=true]:bg-transparent",
+                }}
+              >
                  {messages.map((m) => (
                   <ListboxItem key={m.id} textValue={m.content} className="py-2 sm:py-3">
-                    <div className={clsx("flex items-start gap-3", m.role === "user" ? "flex-row-reverse" : "")}>
+                    <div className={clsx("flex items-start gap-2", m.role === "user" ? "flex-row-reverse" : "")}>
                       <div className="shrink-0 flex flex-col items-center gap-1">
                         <Avatar
                           className="shrink-0"
@@ -719,13 +808,13 @@ export default function ChatPage() {
                           </Tooltip>
                         )}
                       </div>
-                      <div className={clsx("relative group", m.role === "user" ? "items-end" : "items-start")}>
+                      <div className={clsx("relative group", m.role === "user" ? "items-end" : "items-start flex-1") }>
                         <div
                           className={clsx(
-                            "inline-block max-w-[90%] sm:max-w-[85%] rounded-large px-3 py-2 border",
+                            "rounded-large px-3 py-2 border",
                             m.role === "user"
-                              ? "bg-secondary/90 text-secondary-foreground border-secondary/40"
-                              : "bg-content1 text-foreground border-default-200",
+                              ? "inline-block max-w-[90%] sm:max-w-[85%] bg-secondary/90 text-secondary-foreground border-secondary/40"
+                              : "w-full bg-content1 text-foreground border-default-200",
                           )}
                         >
                           <div id={`msg-${m.id}`}>
@@ -768,7 +857,7 @@ export default function ChatPage() {
           </Button>
         </CardFooter>
         {/* Scoped styles for slow fade animation */}
-        <style jsx>{`
+        <style>{`
           @keyframes fadeInOutSlow {
             0% { opacity: 0; }
             10% { opacity: 0.35; }
@@ -779,8 +868,117 @@ export default function ChatPage() {
           }
         `}</style>
       </Card>
+      {isAdmin && (
+        <div className="hidden lg:flex flex-col w-[480px] max-w-[640px] border-1 border-default-300 rounded-medium p-3 bg-content1/50 fixed right-3 top-24 z-30">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-semibold">Admin Notes</div>
+            <div className="flex items-center gap-2">
+              <button
+                className={clsx(
+                  "px-2 py-1 text-xs rounded-small border",
+                  editorMode === "rich" ? "bg-default-200" : "bg-transparent",
+                )}
+                onClick={() => setEditorMode("rich")}
+              >
+                Rich
+              </button>
+              <button
+                className={clsx(
+                  "px-2 py-1 text-xs rounded-small border",
+                  editorMode === "md" ? "bg-default-200" : "bg-transparent",
+                )}
+                onClick={() => setEditorMode("md")}
+              >
+                Markdown
+              </button>
+            </div>
+          </div>
+
+          <label className="text-xs text-default-500 mb-1">Filename (optional)</label>
+          <input
+            className="mb-2 px-2 py-1 text-sm rounded-small border border-default-300 bg-transparent"
+            value={noteFilename}
+            onChange={(e) => setNoteFilename(e.target.value)}
+            placeholder="note-title"
+          />
+
+          {editorMode === "rich" ? (
+            <div
+              ref={richRef}
+              contentEditable
+              suppressContentEditableWarning
+              className="flex-1 min-h-[300px] overflow-auto rounded-small border border-default-300 p-2 text-sm bg-background"
+              style={{ outline: "none" }}
+            />
+          ) : (
+            <textarea
+              className="flex-1 min-h-[300px] overflow-auto rounded-small border border-default-300 p-2 text-sm bg-background"
+              value={markdownText}
+              onChange={(e) => setMarkdownText(e.target.value)}
+              placeholder="# Notes\nWrite markdown here..."
+            />
+          )}
+
+          <div className="flex items-center gap-2 mt-3">
+            <button
+              className="px-3 py-1.5 text-sm rounded-small border border-default-300 bg-default-100"
+              onClick={async () => {
+                try {
+                  setSaveMessage("");
+                  const content = (richRef.current?.innerHTML || "").trim();
+                  if (!content) {
+                    setSaveMessage("Nothing to save (HTML)");
+                    return;
+                  }
+                  const res = await fetch("/api/assistant/upload", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content, format: "html", filename: noteFilename || undefined }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data?.error || "Upload failed");
+                  setSaveMessage(`Saved HTML: ${data.filename}`);
+                } catch (e: any) {
+                  setSaveMessage(e?.message || "Save failed");
+                }
+              }}
+            >
+              Save HTML
+            </button>
+            <button
+              className="px-3 py-1.5 text-sm rounded-small border border-default-300 bg-default-100"
+              onClick={async () => {
+                try {
+                  setSaveMessage("");
+                  const content = markdownText.trim();
+                  if (!content) {
+                    setSaveMessage("Nothing to save (Markdown)");
+                    return;
+                  }
+                  const res = await fetch("/api/assistant/upload", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content, format: "md", filename: noteFilename || undefined }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data?.error || "Upload failed");
+                  setSaveMessage(`Saved Markdown: ${data.filename}`);
+                } catch (e: any) {
+                  setSaveMessage(e?.message || "Save failed");
+                }
+              }}
+            >
+              Save Markdown
+            </button>
+          </div>
+          {saveMessage && (
+            <div className="mt-2 text-xs text-default-600">{saveMessage}</div>
+          )}
+        </div>
+      )}
       </div>
     </div>
+    </AuthGate>
   );
 }
 

@@ -40,21 +40,44 @@ export default function LoginModal({ isOpen, onOpenChange }: LoginModalProps) {
       try {
         const profileRef = doc(db, "userProfiles", u.uid);
         const snap = await getDoc(profileRef);
+        const [firstName, ...rest] = (u.displayName || "").trim().split(" ");
+        const lastName = rest.join(" ") || null;
         if (!snap.exists()) {
           await setDoc(profileRef, {
             userProfileId: u.uid,
             email: u.email || null,
             displayName: u.displayName || null,
+            firstName: firstName || null,
+            lastName: lastName,
             photoURL: u.photoURL || null,
+            role: "viewer",
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
           });
         } else {
-          await setDoc(profileRef, { updatedAt: serverTimestamp() }, { merge: true });
+          await setDoc(
+            profileRef,
+            {
+              updatedAt: serverTimestamp(),
+              lastLoginAt: serverTimestamp(),
+              ...(snap.data()?.firstName ? {} : { firstName: firstName || null }),
+              ...(snap.data()?.lastName ? {} : { lastName }),
+            },
+            { merge: true },
+          );
         }
       } catch {}
-      onOpenChange(false);
-      router.push("/chat");
+      try {
+        const latest = await getDoc(doc(db, "userProfiles", u.uid));
+        const data = latest.data() as any | undefined;
+        const isAdmin = data?.isAdmin === true;
+        onOpenChange(false);
+        router.push(isAdmin ? "/admin" : "/chat");
+      } catch {
+        onOpenChange(false);
+        router.push("/chat");
+      }
     } catch (e: any) {
       setError(e?.message || "Google sign-in failed");
     } finally {
@@ -71,21 +94,44 @@ export default function LoginModal({ isOpen, onOpenChange }: LoginModalProps) {
       try {
         const profileRef = doc(db, "userProfiles", u.uid);
         const snap = await getDoc(profileRef);
+        const [firstName, ...rest] = (u.displayName || "").trim().split(" ");
+        const lastName = rest.join(" ") || null;
         if (!snap.exists()) {
           await setDoc(profileRef, {
             userProfileId: u.uid,
             email: u.email || null,
             displayName: u.displayName || null,
+            firstName: firstName || null,
+            lastName: lastName,
             photoURL: u.photoURL || null,
+            role: "viewer",
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
           });
         } else {
-          await setDoc(profileRef, { updatedAt: serverTimestamp() }, { merge: true });
+          await setDoc(
+            profileRef,
+            {
+              updatedAt: serverTimestamp(),
+              lastLoginAt: serverTimestamp(),
+              ...(snap.data()?.firstName ? {} : { firstName: firstName || null }),
+              ...(snap.data()?.lastName ? {} : { lastName }),
+            },
+            { merge: true },
+          );
         }
       } catch {}
-      onOpenChange(false);
-      router.push("/chat");
+      try {
+        const latest = await getDoc(doc(db, "userProfiles", u.uid));
+        const data = latest.data() as any | undefined;
+        const isAdmin = data?.isAdmin === true;
+        onOpenChange(false);
+        router.push(isAdmin ? "/admin" : "/chat");
+      } catch {
+        onOpenChange(false);
+        router.push("/chat");
+      }
     } catch (e: any) {
       setError(e?.message || "Email sign-in failed");
     } finally {
@@ -152,7 +198,7 @@ export default function LoginModal({ isOpen, onOpenChange }: LoginModalProps) {
                 Continue with Google
               </Button>
               <div className="text-center text-tiny text-secondary mt-1">
-                Don't have an account? <Link href="#" className="text-tiny font-normal">Sign up</Link>
+                Don&apos;t have an account? <Link href="#" className="text-tiny font-normal">Sign up</Link>
               </div>
             </ModalBody>
           </>

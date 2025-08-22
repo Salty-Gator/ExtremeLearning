@@ -1,0 +1,45 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "chats",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "chats",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "userProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isDisabled", "order": "ASCENDING" },
+        { "fieldPath": "lastLoginAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "userProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "role", "order": "ASCENDING" },
+        { "fieldPath": "lastLoginAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "userProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isAdmin", "order": "ASCENDING" },
+        { "fieldPath": "lastLoginAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

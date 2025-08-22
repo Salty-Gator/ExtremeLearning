@@ -8,27 +8,58 @@ export type ChatCompletionOptions = {
   temperature?: number;
 };
 
+export type ChatCompletionUsage = {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+};
+
+export type ChatCompletionResult = {
+  content: string;
+  usage?: ChatCompletionUsage;
+  model?: string;
+};
+
 function getOpenAIKey(): string {
-  const key = process.env.REACT_APP_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+  const key = process.env.OPENAI_API_KEY;
   if (!key) {
     throw new Error(
-      "Missing OpenAI API key. Set REACT_APP_OPENAI_API_KEY (preferred) or OPENAI_API_KEY on the server.",
+      "Missing OpenAI API key. Set OPENAI_API_KEY in your server environment.",
     );
   }
   return key;
 }
 
 function getAssistantId(): string | undefined {
-  return process.env.REACT_APP_OPENAI_ASSISTANT_ID || process.env.OPENAI_ASSISTANT_ID;
+  return process.env.OPENAI_ASSISTANT_ID;
+}
+
+function getOpenAITemperature(): number | undefined {
+  const raw = process.env.OPENAI_TEMPERATURE;
+  if (raw === undefined) return undefined;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 export async function createChatCompletion(
   messages: OpenAIChatMessage[],
-  { model, temperature = 0.7 }: ChatCompletionOptions = {},
-): Promise<string> {
+  { model, temperature }: ChatCompletionOptions = {},
+): Promise<ChatCompletionResult> {
   const apiKey = getOpenAIKey();
   const effectiveModel =
-    model || process.env.REACT_APP_OPENAI_MODEL || process.env.OPENAI_MODEL || "gpt-5";
+    model || process.env.OPENAI_MODEL || "gpt-4o-mini";
+  const envTemperature = getOpenAITemperature();
+  const effectiveTemperature =
+    typeof temperature === "number" ? temperature : envTemperature;
+
+  const requestBody: any = { model: effectiveModel, messages };
+  if (
+    typeof effectiveTemperature === "number" &&
+    !Number.isNaN(effectiveTemperature) &&
+    effectiveTemperature !== 1
+  ) {
+    requestBody.temperature = effectiveTemperature;
+  }
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -36,7 +67,7 @@ export async function createChatCompletion(
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ model: effectiveModel, messages, temperature }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
@@ -46,7 +77,9 @@ export async function createChatCompletion(
 
   const data = await response.json();
   const content: string = data?.choices?.[0]?.message?.content ?? "";
-  return content;
+  const usage: ChatCompletionUsage | undefined = data?.usage;
+  const usedModel: string | undefined = data?.model;
+  return { content, usage, model: usedModel };
 }
 
 export type AssistantAnnotation = {
@@ -129,6 +162,16 @@ export async function createAssistantResponse(
       body: JSON.stringify({
         assistant_id: resolvedAssistantId,
         ...(systemInstructions ? { instructions: systemInstructions } : {}),
+        // Attach vector store(s) if configured so file_search can ground answers
+        ...(process.env.OPENAI_VECTOR_STORE_ID
+          ? {
+              tool_resources: {
+                file_search: {
+                  vector_store_ids: [process.env.OPENAI_VECTOR_STORE_ID],
+                },
+              },
+            }
+          : {}),
       }),
     },
   );
@@ -216,7 +259,7 @@ export async function createAssistantResponse(
 export async function refineAssistantOutputWithChatCompletion(
   userRequest: string,
   assistantOutput: string,
-): Promise<string> {
+): Promise<ChatCompletionResult> {
   const systemInstruction =
     "In the best of your ability as Network Infrastructure Engineer and Network Infrastructure Architecture, please review the user's request plus this already provided assistant response information and formulate your facts. If your facts include detailed configuration steps please make sure to provide those details along with an explanation of that configuration.";
 
@@ -227,7 +270,7 @@ export async function refineAssistantOutputWithChatCompletion(
     { role: "user", content: reviewPrompt },
   ];
 
-  // Slightly lower temperature to bias toward precise, reproducible configs
-  return createChatCompletion(messages, { temperature: 0.3 });
+  // Use global/default temperature controls; do not force a non-1 value
+  return createChatCompletion(messages);
 }
 
