@@ -14,7 +14,7 @@ export default function K12OperationalSimplicityPage() {
           className="text-center"
         >
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight">
-            <span className="text-purple-500">Fabric Connect</span> for K‑12: Operational Simplicity
+            <span className="text-purple-500">Fabric Connect</span> for <span className="text-purple-500">K‑12</span>: Operational Simplicity
           </h1>
           <p className="mt-4 text-base sm:text-lg text-default-600">
             How Extreme Fabric Connect simplifies operations for lean K‑12 IT teams.
@@ -41,51 +41,13 @@ export default function K12OperationalSimplicityPage() {
           >
             <h2 className="text-lg font-semibold text-purple-500 group-hover:text-purple-600">Typical K‑12 network infrastructure</h2>
             <ul className="mt-2 list-disc pl-5 text-sm text-default-600 space-y-2">
-              <li>
-                Topology: District core/data center (redundant) connects to Internet, firewall, content filter,
-                and WAN links to each school. School distribution/core uplinks to access closets. Access layer PoE
-                switches connect classroom and office devices.
-              </li>
-              <li>
-                Wireless: APs (PoE) provide SSIDs for Students, Faculty/Staff, Guests, and Devices/IoT. Laptops use
-                802.1X (EAP‑TLS/PEAP) with RADIUS/IdP; IoT/AV often onboarded via MAC/PSK workflows.
-              </li>
-              <li>
-                Student laptops: Typically join the Student SSID via 802.1X, receive DHCP, and are placed in a
-                student segment with filtered Internet and access to approved learning apps.
-              </li>
-              <li>
-                Faculty laptops: Join Staff SSID (Wi‑Fi) or Ethernet (802.1X) and land in a staff segment with
-                policy‑based access to SIS/HR systems and printers.
-              </li>
-              <li>
-                Printers: Wired Ethernet to access switches; DHCP or reserved IPs. Printing across segments uses
-                mDNS/Bonjour gateway or print servers; inbound access to printers is restricted by policy.
-              </li>
-              <li>
-                Projectors: Wired or Wi‑Fi; often require AirPlay/Chromecast discovery. Discovery across segments is
-                enabled via mDNS/DNS‑SD gateway with tightly scoped policies.
-              </li>
-              <li>
-                ClearTouch screens: Wired PoE or Wi‑Fi; placed in an IoT/AV segment with limited egress. Casting,
-                remote management, and firmware updates are allowed via defined policies.
-              </li>
-              <li>
-                Wireless access points: PoE to access switches; carry multiple SSIDs/segments on tagged uplinks;
-                managed via on‑prem or cloud. Ensure adequate PoE budget and redundancy.
-              </li>
-              <li>
-                Network switches: Access and distribution switches provide PoE and uplinks (LAG). Management VLAN/
-                segment for switch/AP management; monitoring with syslog/SNMP/streaming telemetry.
-              </li>
-              <li>
-                Core services & controls: DHCP/DNS, RADIUS, NAC/onboarding, content filtering, and firewall
-                enforcement. QoS for voice/AV; NTP for time; logging for audits and incident response.
-              </li>
-              <li>
-                Traffic flow: Device authenticates → assigned role/segment → traffic carried from access to school
-                core → to district services or Internet via firewall/filter. Inter‑segment access follows policy.
-              </li>
+              <li>Core/data center switches.</li>
+              <li>Distribution switches at schools/campuses.</li>
+              <li>Access switches (PoE) for edge connectivity.</li>
+              <li>Wireless access points (managed, PoE).</li>
+              <li>Routers (WAN/edge) for site and Internet connectivity.</li>
+              <li>Firewalls for perimeter and security enforcement.</li>
+              <li>Internet circuits and WAN links between district and schools.</li>
             </ul>
           </div>
 
