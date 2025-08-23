@@ -170,6 +170,99 @@ export default function Home() {
             </div>
           </motion.div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.5, ease: "easeOut" }}
+            className="mt-12"
+          >
+            <div className="text-center">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                <span className="text-purple-500">Colleges</span> & Universities
+              </h2>
+              <p className="mt-3 text-sm sm:text-base text-default-600">
+                How Fabric Connect supports complex campus networks with secure segmentation, resiliency, and rapid operations.
+              </p>
+            </div>
+
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="rounded-large border border-default-200 bg-content1 p-4"
+              >
+                <h3 className="font-semibold text-purple-500">Student mobility across campus</h3>
+                <ul className="mt-2 list-disc pl-5 text-sm text-default-600 space-y-1">
+                  <li>Seamless roaming across buildings, quads, and outdoor spaces</li>
+                  <li>Consistent wireless experience in classrooms and common areas</li>
+                  <li>Policy-based services for students and athletes in venues</li>
+                </ul>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ delay: 0.06, duration: 0.4, ease: "easeOut" }}
+                className="rounded-large border border-default-200 bg-content1 p-4"
+              >
+                <h3 className="font-semibold text-purple-500">Faculty & research networks</h3>
+                <ul className="mt-2 list-disc pl-5 text-sm text-default-600 space-y-1">
+                  <li>End-to-end segmentation for faculty services separate from students</li>
+                  <li>Support for government-funded research networks with dedicated policy</li>
+                  <li>Extend services across campus and into data centers securely</li>
+                </ul>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ delay: 0.12, duration: 0.4, ease: "easeOut" }}
+                className="rounded-large border border-default-200 bg-content1 p-4"
+              >
+                <h3 className="font-semibold text-purple-500">Resiliency & redundancy</h3>
+                <ul className="mt-2 list-disc pl-5 text-sm text-default-600 space-y-1">
+                  <li>Fast convergence with deterministic paths to minimize downtime</li>
+                  <li>Redundant core and edge designs for always-on services</li>
+                  <li>Isolated faults reduce impact to users and applications</li>
+                </ul>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ delay: 0.18, duration: 0.4, ease: "easeOut" }}
+                className="rounded-large border border-default-200 bg-content1 p-4"
+              >
+                <h3 className="font-semibold text-purple-500">Operational agility with security</h3>
+                <ul className="mt-2 list-disc pl-5 text-sm text-default-600 space-y-1">
+                  <li>Service-based networking accelerates deployment and changes</li>
+                  <li>Faster troubleshooting with simplified, consistent constructs</li>
+                  <li>Granular segmentation and role-based policies for protection</li>
+                </ul>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ delay: 0.24, duration: 0.4, ease: "easeOut" }}
+                className="rounded-large border border-default-200 bg-content1 p-4"
+              >
+                <h3 className="font-semibold text-purple-500">Guest access & event services</h3>
+                <ul className="mt-2 list-disc pl-5 text-sm text-default-600 space-y-1">
+                  <li>Simple onboarding for guests with internet-only access</li>
+                  <li>Isolated guest services protect campus resources</li>
+                  <li>Monetize temporary access (e.g., job fairs and events)</li>
+                </ul>
+              </motion.div>
+            </div>
+          </motion.div>
+ 
         </div>
       </section>
       <AnimatePresence>
