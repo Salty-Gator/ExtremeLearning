@@ -58,8 +58,19 @@ export default function Home() {
                 <li>Operational best practices and troubleshooting</li>
               </ul>
             </div>
-            <div className="rounded-large border border-default-200 bg-content1 p-4">
-              <h3 className="font-semibold text-purple-500">Fabric Connect</h3>
+            <div
+              className="group rounded-large border border-default-200 bg-content1 p-4 cursor-pointer transition-all duration-200 ease-out hover:bg-content2/60 hover:border-default-300 hover:shadow-medium hover:-translate-y-0.5"
+              role="link"
+              tabIndex={0}
+              onClick={() => router.push("/fabric-connect")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  router.push("/fabric-connect");
+                }
+              }}
+            >
+              <h3 className="font-semibold text-purple-500 group-hover:text-purple-600">Fabric Connect</h3>
               <ul className="mt-2 list-disc pl-5 text-sm text-default-600 space-y-1">
                 <li>Core concepts and benefits</li>
                 <li>Configuration patterns and deployment tips</li>
