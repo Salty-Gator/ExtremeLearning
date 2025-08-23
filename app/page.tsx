@@ -123,9 +123,18 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ delay: 0.06, duration: 0.4, ease: "easeOut" }}
-                className="rounded-large border border-default-200 bg-content1 p-4"
+                className="group rounded-large border border-default-200 bg-content1 p-4 cursor-pointer transition-all duration-200 ease-out hover:bg-content2/60 hover:border-default-300 hover:shadow-medium hover:-translate-y-0.5"
+                role="link"
+                tabIndex={0}
+                onClick={() => router.push("/fabric-connect/k12-operational-simplicity")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    router.push("/fabric-connect/k12-operational-simplicity");
+                  }
+                }}
               >
-                <h3 className="font-semibold text-purple-500">Operational simplicity</h3>
+                <h3 className="font-semibold text-purple-500 group-hover:text-purple-600">Operational simplicity</h3>
                 <ul className="mt-2 list-disc pl-5 text-sm text-default-600 space-y-1">
                   <li>Simplified adds/moves/changes with service-based networking</li>
                   <li>Consistent policy from the core to the classroom edge</li>
