@@ -177,9 +177,126 @@ export default function K12PainPointsPage() {
               <li>Scales from single school to district with consistent policy and reduced toil.</li>
             </ul>
           </div>
+
+          <ImageSwiper />
         </motion.div>
       </div>
     </section>
+  );
+}
+
+function ImageSwiper() {
+  const [images, setImages] = useState<{ filename: string; url: string }[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const pointerStartXRef = useRef<number | null>(null);
+  const pointerDeltaXRef = useRef<number>(0);
+  const pointerActiveRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/api/images/fabric-swiper")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!isMounted) return;
+        const imgs = Array.isArray(data?.images) ? data.images : [];
+        setImages(imgs);
+      })
+      .catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
+
+  function goTo(index: number) {
+    if (images.length === 0) return;
+    const clamped = Math.max(0, Math.min(images.length - 1, index));
+    setCurrentIndex(clamped);
+  }
+
+  useEffect(() => {
+    if (trackRef.current) {
+      trackRef.current.style.transform = `translateX(-${currentIndex * 100}%)`;
+    }
+  }, [currentIndex]);
+
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (images.length === 0) return;
+    pointerActiveRef.current = true;
+    pointerStartXRef.current = e.clientX;
+    pointerDeltaXRef.current = 0;
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!pointerActiveRef.current || pointerStartXRef.current === null || !trackRef.current) return;
+    const deltaX = e.clientX - pointerStartXRef.current;
+    pointerDeltaXRef.current = deltaX;
+    const percentage = (deltaX / e.currentTarget.clientWidth) * 100;
+    const base = currentIndex * -100;
+    trackRef.current.style.transform = `translateX(${base + percentage}%)`;
+  }
+
+  function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    if (!pointerActiveRef.current) return;
+    pointerActiveRef.current = false;
+    const thresholdPx = 50;
+    const deltaX = pointerDeltaXRef.current;
+    if (Math.abs(deltaX) > thresholdPx) {
+      if (deltaX < 0) goTo(currentIndex + 1); else goTo(currentIndex - 1);
+    } else {
+      goTo(currentIndex);
+    }
+    pointerStartXRef.current = null;
+    pointerDeltaXRef.current = 0;
+  }
+
+  if (images.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 rounded-large bg-transparent">
+      <div
+        role="region"
+        aria-roledescription="carousel"
+        aria-label="Fabric Connect images"
+        aria-live="polite"
+        className="overflow-hidden"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        <div
+          ref={trackRef}
+          className="flex w-full transition-transform duration-300 ease-out"
+          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        >
+          {images.map((img) => (
+            <div key={img.url} className="w-full shrink-0 px-0 pb-2">
+              <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
+                <img src={img.url} alt={img.filename} className="absolute inset-0 h-full w-full object-contain rounded-large" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center justify-center gap-2 px-2 pt-2">
+        {images.map((_, idx) => (
+          <button
+            key={idx}
+            type="button"
+            aria-label={`Go to slide ${idx + 1}`}
+            aria-current={idx === currentIndex ? "true" : undefined}
+            onClick={() => goTo(idx)}
+            className={
+              idx === currentIndex
+                ? "h-2 w-2 rounded-full bg-primary"
+                : "h-2 w-2 rounded-full bg-default-300 hover:bg-default-400"
+            }
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 

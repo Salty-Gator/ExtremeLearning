@@ -23,6 +23,27 @@ export default function FabricConnectPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.5, ease: "easeOut" }}
+          className="mt-8"
+        >
+          <div className="rounded-large border border-default-200 bg-content1 p-4">
+            <h2 className="text-lg font-semibold text-purple-500">Fear Not the Fabric</h2>
+            <div className="mt-4" style={{ position: "relative", overflow: "hidden", aspectRatio: "1920/1080" }}>
+              <iframe
+                src="https://share.synthesia.io/embeds/videos/462a269c-1750-4cb2-8761-cd38ff7c81c2"
+                loading="lazy"
+                title="Synthesia video player - Fabric Connect L2 VSN"
+                allowFullScreen
+                allow="encrypted-media; fullscreen;"
+                style={{ position: "absolute", width: "100%", height: "100%", top: 0, left: 0, border: "none", padding: 0, margin: 0, overflow: "hidden" }}
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.5, ease: "easeOut" }}
           className="mt-8"
         >
